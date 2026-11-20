@@ -42,7 +42,7 @@ Do what the user or calling skill asks: connect the MCP server, install skills, 
 
 You get either a skill to copy or the names of datadog-labs skills. Install into every client from step 1 of **Connect the MCP server** (find them the same way even if you're only installing).
 
-- **A skill to copy:** a file such as another skill's `assets/skills/<name>.md`, a folder, or text in the conversation. Its `name` frontmatter field is `<name>`. Copy it without rewording: a file or text becomes `<name>/SKILL.md`, a folder is copied whole. Replace an existing `<name>/` and say so.
+- **A skill to copy:** a file such as another skill's `assets/skills/<name>.md`, a folder, or text in the conversation. Its `name` frontmatter field is `<name>`. Copy it without rewording: a file or text becomes `<name>/SKILL.md`, a folder is copied whole. Where shell copies aren't allowed, write each file with your file tool. Replace an existing `<name>/` and say so.
 
   | Client | User skills folder |
   |---|---|
