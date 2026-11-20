@@ -1,6 +1,6 @@
 ---
 name: dd-git-tagging
-description: Datadog Git metadata tagging for one service. Checks whether the service's traces already carry the Git commit and repository URL, and if not, sets DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL where the service is built and launched (plus matching DD_TAGS entries only for services that send traces without an Agent), then confirms tagged traces arrive. This is the telemetry half of Datadog source code integration, which links traces, errors, and profiles to the exact code that ran, and which services built on it, such as Live Debugger, rely on. Works for any language Datadog's tracers support. Use when the user's Git provider is connected to Datadog but code links, inline source, or "view in GitHub" don't show up; when Datadog's source code setup page says a service isn't tagged; when asked to add Git commit or repository info to traces; or when another skill needs telemetry tagged with Git metadata. Not for connecting GitHub to Datadog (use dd-github-onboarding) or installing a tracer.
+description: Tag one service's traces with its Git commit and repository URL where it's built and launched, then confirm tagged traces arrive. This is the telemetry half of Datadog source code integration. Use when code links or inline source don't show up, a service shows as untagged, or another skill needs Git metadata. Not for connecting GitHub (use dd-github-onboarding).
 metadata:
   version: "0.1.0"
   author: datadog-labs

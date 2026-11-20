@@ -1,8 +1,8 @@
 ---
 name: dd-instrument-shipdog
-description: Datadog Shipdog backend setup. Gets one service's traces and logs into Datadog, turns on Live Debugger (logpoints that capture variable values from running code), and proves it with a real logpoint. Supports Python and Node.js today, sending straight to Datadog with no Agent (agentless mode) or through an existing working Agent. Use when the user wants to add logpoints to their app, see variable values from a running or production service without print statements or redeploys, set up or fix Live Debugger ("service isn't available", logpoints never capture), send traces and logs to Datadog without an Agent, or set up or onboard to Shipdog. Not for installing the Datadog Agent on hosts, frontend RUM, or adding log statements to code.
+description: Datadog Shipdog setup for a Python or Node.js backend, with traces and logs sent straight to Datadog (no Agent needed) and Live Debugger, proven with a real logpoint. Use to set up or onboard to Shipdog, add logpoints or see live variable values, fix Live Debugger, or send traces and logs without an Agent. Not for installing the Agent, RUM, or adding log statements.
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
   author: datadog-labs
   repository: https://github.com/datadog-labs/agent-skills
   tags: datadog,shipdog,live-debugger,apm,logs,agentless,python,nodejs
@@ -13,12 +13,11 @@ metadata:
 
 Shipdog gives a team traces, logs, and Live Debugger for their backend. This skill sets up one service for it. Today that means Python or Node.js in agentless mode: the tracer sends straight to Datadog with no Agent ([Node.js](https://docs.datadoghq.com/tracing/trace_collection/library_config/nodejs/#agentless-mode), [Python](https://docs.datadoghq.com/tracing/trace_collection/library_config/python/#agentless-mode)).
 
-Live Debugger is the only Dynamic Instrumentation feature in scope. Its tracer switch is `DD_DYNAMIC_INSTRUMENTATION_ENABLED` (step 2); don't set up other Dynamic Instrumentation probes or suggest them in the report.
+Dynamic Instrumentation is out of scope for Shipdog: don't enable, configure, or verify it, and don't suggest it in the report.
 
 ## Rules
 
 - Read the entrypoint, manifests, and deploy files before editing.
-- Live Debugger isn't available on the US1-FED or US2-FED sites. If `DD_SITE` is `ddog-gov.com` or `us2.ddog-gov.com`, stop before editing anything: reply `Not set up: Shipdog isn't available on <site>.`
 - Never write the API key value into a committed file, and never print it.
 - One tracer init. If the project already loads `ddtrace`/`dd-trace`, keep that load and fix its version and settings, so the tracer's settings come from one place.
 - Add dependencies to the manifest the deploy installs from, not only the local environment. Keep `node_modules/` and virtualenvs in `.gitignore`.
@@ -40,7 +39,7 @@ Live Debugger places logpoints by file and line, so Datadog must see the service
   - An Agent answers locally but the project doesn't use it: a local Agent says nothing about where the service deploys. Go agentless and mention it in the report.
 - **Logging library:** Node.js `winston`/`pino`/`bunyan` or only `console.log`; Python `logging`/`structlog`, `loguru`, or only `print`.
 - **Existing values** of the variables in step 2. Reuse them.
-- **MCP tools:** if `discover_datadog_logpoint` isn't in your tool list, run the `dd-coding-agent-mcp` skill now with Shipdog's toolsets (below). If that skill isn't installed, or there's no local coding agent whose MCP config you can change, don't set up MCP yourself: finish the setup, verify with **No MCP tools**, and add a warning to the report's follow-ups (`Warning: the dd-coding-agent-mcp skill is missing, so the Datadog MCP tools weren't connected. Install it from https://github.com/datadog-labs/agent-skills and rerun.`, or say no local coding agent could be configured). The user's reload and sign-in can happen while you edit; don't wait on them. If the tools still aren't there by step 4, verify with **No MCP tools** below and list the steps that skill reported as a follow-up. Missing tools never stop the setup.
+- **MCP tools and debug skill (required):** run the `dd-coding-agent-mcp` skill now, for every coding agent the user has. Every time, have it install `assets/skills/datadog-debug.md` from this skill's folder, so later sessions know which Datadog skill fits a problem on this service. If `discover_datadog_logpoint` isn't in your tool list, also have it connect Shipdog's toolsets (below). It only writes config and copies a file on the user's machine: it needs no sign-in from you and no Datadog MCP tools in your own session, so run it even where those tools aren't available, such as a setup CLI. `datadog-debug` is a skill this skill ships, not a missing one. Never skip this step. If that skill isn't installed, do neither yourself: finish the setup, verify with **No MCP tools** if the tools are missing, and add a warning to the report's follow-ups (`Warning: the dd-coding-agent-mcp skill is missing, so the Datadog MCP tools and the datadog-debug skill weren't set up. Install it from https://github.com/datadog-labs/agent-skills and rerun.`). The user's reload and any sign-in happen later; don't wait on them. If the tools still aren't there by step 4, verify with **No MCP tools** below and list the steps that skill reported as a follow-up. Missing tools never stop the setup.
 
   | Shipdog product | Toolset |
   |---|---|
@@ -108,8 +107,8 @@ Open Live Debugger in Datadog, start a Debug Session on the service and env, add
 You can still confirm that traces and logs arrive through the public API, with `DD_API_KEY` and an application key in `DD_APP_KEY`; never print either. `dd-account-setup` can leave `DD_APP_KEY` unset after an OAuth sign-in; if it's missing, skip these checks. Use [Search logs](https://docs.datadoghq.com/api/latest/logs/#search-logs-post) with `service:<DD_SERVICE> -source:dd_debugger` for app logs, and [Search spans](https://docs.datadoghq.com/api/latest/spans/#search-spans) (`/api/v2/spans/events/search`, body wrapped as `{"data":{"type":"search_request","attributes":{...}}}`) for traces:
 
 ```sh
-printf 'DD-API-KEY: %s\nDD-APPLICATION-KEY: %s\n' "$DD_API_KEY" "$DD_APP_KEY" | \
-curl -s -X POST "https://api.$DD_SITE/api/v2/logs/events/search" -H @- -H "Content-Type: application/json" \
+curl -s -X POST "https://api.$DD_SITE/api/v2/logs/events/search" \
+  -H "DD-API-KEY: $DD_API_KEY" -H "DD-APPLICATION-KEY: $DD_APP_KEY" -H "Content-Type: application/json" \
   -d '{"filter":{"query":"service:<DD_SERVICE> -source:dd_debugger","from":"now-15m"},"page":{"limit":5}}'
 ```
 
@@ -123,3 +122,4 @@ Write for someone new to Datadog, in plain language. Never include the key.
 2. Each changed file, with why it's needed.
 3. The launch command for each place the service runs.
 4. Real follow-ups only, such as connecting the Git provider (step 0), adding `DD_API_KEY` to deploy secrets, or moving `console.log`/`print` onto a logging library.
+5. For each coding agent, whether the Datadog MCP server and the `datadog-debug` skill were added, or why not.
